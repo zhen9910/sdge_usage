@@ -1,10 +1,10 @@
 # sdge_usage
 
-This python script helps to analyze SDGE eletricity usage data, and show the Super off Peak, off Peak, On Peak usage, respectively.
+With solar pannels installed, charging EV during Super-Off-Peak periods does not always result in cost savings. You often don't know the electricity generated during Super-Off-Peak periods has been fully utilized, so you actually buy additional electicities from SDGE. Whereas the electricity generated during Off-Peak and On-Peak periods are wasted.
 
-SDGE eletricity usage data can be downloaded from your SDGE accout.
+This script analyzes SDGE eletricity usage at different time periods, and then let you know which period has free electricities from your installed solar pannels, so helps you to charge smartly and save money.
 
-Current version supports only SDGE Time-of-Use TOU-DR1 price plan, additional plan usage calulation will be added later.
+It currently supports only SDGE Time-of-Use TOU-DR1 price plan, additional plan usage will be added later. SDGE eletricity usage data can be downloaded from your SDGE accout.
 
 python 3.10 or higher is required.
 
