@@ -25,4 +25,3 @@ On Peak net usage (kwh):        -35.53499999999997
 
 Total net usage (kwh):          84.87000000000077
 ```
-
