@@ -60,13 +60,21 @@ if __name__ == '__main__':
     off_peak_kwh = 0
     on_peak_kwh = 0
     meter_number = 0
+    total_usage = 0
+    reading_start = ""
+    reading_end = ""
 
+    print(f"\n\nReading file: {filename}\n\n")
     # get metadata
     for row in sheet.iter_rows(values_only=True):
+        # print(row)
         match row[0]:
             case "Meter Number":
-                if isinstance(row[1], int):
+                print(type(row[1]))
+                # if isinstance(row[1], int):
+                if row[1] != "Date":
                     meter_number = row[1]
+                    print(f"Meter Number: {meter_number}")
                 else:
                     break
             case "Reading Start":
@@ -75,7 +83,10 @@ if __name__ == '__main__':
                 reading_end = row[1]
             case "Total Usage":
                 total_usage = row[1]
+                print(f"total usage is {total_usage}")
 
+
+    # print(f"Meter Number: {meter_number}")
     # get usage data
     for row in sheet.iter_rows(values_only=True):
             if row[0] == meter_number:
