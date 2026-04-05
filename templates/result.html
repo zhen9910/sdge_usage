@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SDGE Usage Results</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+  <div class="container py-5">
+    <div class="row justify-content-center">
+      <div class="col-md-6">
+
+        {% if result.warning %}
+          <div class="alert alert-warning">{{ result.warning }}</div>
+        {% endif %}
+
+        <div class="card shadow-sm mb-3">
+          <div class="card-body p-4">
+            <h1 class="h4 mb-0">Usage Results</h1>
+            <p class="text-muted small mb-3">{{ result.filename }}</p>
+
+            <dl class="row mb-0 small text-muted">
+              <dt class="col-sm-5">Meter Number</dt>
+              <dd class="col-sm-7">{{ result.meter_number }}</dd>
+              <dt class="col-sm-5">Period</dt>
+              <dd class="col-sm-7">{{ result.reading_start }} &ndash; {{ result.reading_end }}</dd>
+            </dl>
+          </div>
+        </div>
+
+        <div class="card shadow-sm mb-3">
+          <div class="card-body p-4">
+            <h2 class="h6 text-uppercase text-muted mb-3">Net Usage (kWh)</h2>
+            <table class="table table-borderless mb-0">
+              <tbody>
+                <tr>
+                  <td class="ps-0"><span class="badge bg-info text-dark">Super Off-Peak</span></td>
+                  <td class="text-end fw-semibold {% if result.super_off_peak_kwh < 0 %}text-success{% endif %}">
+                    {{ result.super_off_peak_kwh }}
+                  </td>
+                </tr>
+                <tr>
+                  <td class="ps-0"><span class="badge bg-secondary">Off-Peak</span></td>
+                  <td class="text-end fw-semibold {% if result.off_peak_kwh < 0 %}text-success{% endif %}">
+                    {{ result.off_peak_kwh }}
+                  </td>
+                </tr>
+                <tr>
+                  <td class="ps-0"><span class="badge bg-danger">On-Peak</span></td>
+                  <td class="text-end fw-semibold {% if result.on_peak_kwh < 0 %}text-success{% endif %}">
+                    {{ result.on_peak_kwh }}
+                  </td>
+                </tr>
+                <tr class="table-light border-top">
+                  <td class="ps-0 fw-bold">Total</td>
+                  <td class="text-end fw-bold {% if result.total_kwh < 0 %}text-success{% endif %}">
+                    {{ result.total_kwh }}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+            <p class="text-muted small mt-2 mb-0">Negative values indicate net solar export for that period.</p>
+          </div>
+        </div>
+
+        <a href="{{ url_for('index') }}" class="btn btn-outline-secondary w-100">Analyze another file</a>
+
+      </div>
+    </div>
+  </div>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

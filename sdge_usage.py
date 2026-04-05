@@ -53,13 +53,29 @@ def iter_rows_csv(filename):
     with open(filename, newline='', encoding='utf-8-sig') as f:
         reader = csv.reader(f)
         for row in reader:
-            # Pad to at least 7 columns so indexing is consistent with xlsx
             while len(row) < 7:
                 row.append(None)
             yield row
 
 
+def iter_rows_csv_stream(stream):
+    text = stream.read().decode('utf-8-sig')
+    reader = csv.reader(text.splitlines())
+    for row in reader:
+        while len(row) < 7:
+            row.append(None)
+        yield row
+
+
+def iter_rows_xlsx_stream(stream):
+    wb = openpyxl.load_workbook(stream)
+    sheet = wb.active
+    for row in sheet.iter_rows(values_only=True):
+        yield [cell for cell in row]
+
+
 def process(rows):
+    """Process rows and return a result dict, or raise ValueError on bad input."""
     meter_number = None
     total_usage = 0
     reading_start = ""
@@ -77,7 +93,6 @@ def process(rows):
             case "Meter Number":
                 val = str(row[1]).strip() if row[1] is not None else ""
                 if val != "Date":
-                    # Normalize meter number: strip leading zeros, store as string
                     meter_number = val.lstrip("0") or val
             case "Reading Start":
                 reading_start = row[1]
@@ -87,11 +102,7 @@ def process(rows):
                 total_usage = float(row[1])
 
     if meter_number is None:
-        print("Error: could not find Meter Number in file")
-        sys.exit(1)
-
-    print(f"Meter Number: {meter_number}")
-    print(f"Total usage is {total_usage}")
+        raise ValueError("Could not find Meter Number in file")
 
     # Pass 2: usage data
     for row in all_rows:
@@ -110,15 +121,20 @@ def process(rows):
                     on_peak_kwh += kwh
 
     total_kwh = super_off_peak_kwh + off_peak_kwh + on_peak_kwh
-
+    warning = None
     if not math.isclose(total_kwh, total_usage, rel_tol=1e-6):
-        print(f"Warning: categorized total {total_kwh} != reported total {total_usage}")
+        warning = f"Categorized total {total_kwh:.4f} kWh does not match reported total {total_usage:.4f} kWh"
 
-    print(f"\n\nElectricity usage from {reading_start} to {reading_end}\n\n")
-    print(f"Super Off Peak net usage (kwh): {super_off_peak_kwh}")
-    print(f"Off Peak net usage (kwh):       {off_peak_kwh}")
-    print(f"On Peak net usage (kwh):        {on_peak_kwh}\n")
-    print(f"Total net usage (kwh):          {total_kwh}")
+    return {
+        "meter_number": meter_number,
+        "reading_start": reading_start,
+        "reading_end": reading_end,
+        "super_off_peak_kwh": round(super_off_peak_kwh, 4),
+        "off_peak_kwh": round(off_peak_kwh, 4),
+        "on_peak_kwh": round(on_peak_kwh, 4),
+        "total_kwh": round(total_kwh, 4),
+        "warning": warning,
+    }
 
 
 if __name__ == '__main__':
@@ -138,4 +154,12 @@ if __name__ == '__main__':
         print("Error: unsupported file type. Use .xlsx or .csv")
         sys.exit(1)
 
-    process(rows)
+    result = process(rows)
+    print(f"Meter Number: {result['meter_number']}")
+    print(f"\n\nElectricity usage from {result['reading_start']} to {result['reading_end']}\n\n")
+    print(f"Super Off Peak net usage (kwh): {result['super_off_peak_kwh']}")
+    print(f"Off Peak net usage (kwh):       {result['off_peak_kwh']}")
+    print(f"On Peak net usage (kwh):        {result['on_peak_kwh']}\n")
+    print(f"Total net usage (kwh):          {result['total_kwh']}")
+    if result['warning']:
+        print(f"\nWarning: {result['warning']}")
