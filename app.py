@@ -108,6 +108,7 @@ def fetch():
         return redirect(url_for("connect"))
     except Exception as e:
         flash(f"Fetch failed: {e}", "danger")
+        return redirect(url_for("connect"))
     return redirect(url_for("index"))
 
 

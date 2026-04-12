@@ -15,6 +15,7 @@ update, run with --debug to open the Playwright Inspector and verify live.
 import datetime
 import io
 import json
+import re
 import sys
 from datetime import date, timedelta
 from pathlib import Path
@@ -108,29 +109,41 @@ def fetch_current_billing_csv(debug: bool = False) -> bytes:
             print("[debug] Green Button Download dialog open.")
             page.pause()
 
-        # ── 5. Set From date ─────────────────────────────────────────────────
-        # The dialog has two date-picker inputs before the radio buttons.
-        # We target non-radio inputs and rely on document order.
-        date_inputs = page.locator(
-            "input:not([type='radio']):not([type='checkbox']):not([type='hidden'])"
-        )
-        from_field = date_inputs.nth(0)
-        from_field.triple_click()
-        from_field.fill(billing_start.strftime("%B %d, %Y"))
+        # ── 5. Set From date via calendar picker ─────────────────────────────
+        # The date fields use a calendar popup widget — they are not fillable
+        # text inputs. Click the From field to open the calendar, navigate back
+        # to the billing start month, then click the correct day cell.
 
-        # ── 6. Set To date ───────────────────────────────────────────────────
-        to_field = date_inputs.nth(1)
-        to_field.triple_click()
-        to_field.fill(today.strftime("%B %d, %Y"))
+        # Open the From calendar. The date fields use the CSS class "calText"
+        # (Material Design textfield with calendar icon). First = From, second = To.
+        page.locator(".calText").first.click()
+
+        # Navigate back from the currently shown month to billing_start's month.
+        # Calendar header selector covers Bootstrap datepicker (.datepicker-switch)
+        # and jQuery UI (.ui-datepicker-title).
+        for _ in range(24):  # safety cap: never go back more than 2 years
+            header = page.locator(
+                ".datepicker-switch, .ui-datepicker-title, [class*='month-year']"
+            ).first.inner_text()
+            # header is "April 2026" or "April\n2026"
+            shown = datetime.datetime.strptime(header.strip().split()[0] + " " + header.strip().split()[-1], "%B %Y").date().replace(day=1)
+            target_month = billing_start.replace(day=1)
+            if shown <= target_month:
+                break
+            page.locator(".prev").or_(page.get_by_text("«", exact=True)).first.click()
+
+        # Click the exact day cell (use text-is to avoid partial matches like
+        # clicking "13" when "30" is also present on the same calendar)
+        page.locator("td").filter(has_text=re.compile(rf"^{billing_start.day}$")).first.click()
+
+        if debug:
+            print(f"[debug] From date set to {billing_start}. Check the dialog, then resume.")
+            page.pause()
 
         # ── 7. Confirm .csv radio is selected (it is the default) ────────────
         csv_radio = page.locator("input[type='radio']").first
         if not csv_radio.is_checked():
             csv_radio.click()
-
-        if debug:
-            print("[debug] Dates filled. Check the dialog, then resume to download.")
-            page.pause()
 
         # ── 8. Click Download and capture the file ───────────────────────────
         with page.expect_download() as dl_info:
