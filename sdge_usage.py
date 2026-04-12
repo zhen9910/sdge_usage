@@ -137,6 +137,54 @@ def process(rows):
     }
 
 
+def get_charging_recommendation(result: dict) -> dict:
+    """Return the best EV charging window based on solar surplus this period.
+
+    A negative kWh value means net solar export (surplus); we prefer to charge
+    during whichever period has the most surplus, because that maximises
+    self-consumption and minimises grid draw.
+
+    Super Off-Peak  midnight–6 AM   (always cheapest even without surplus)
+    Off-Peak        9 PM–midnight
+    """
+    sop = result.get("super_off_peak_kwh", 0.0)
+    op = result.get("off_peak_kwh", 0.0)
+
+    if sop < 0:
+        return {
+            "recommended_period": "Super Off-Peak",
+            "charge_start": 0,
+            "charge_end": 6,
+            "surplus_kwh": round(abs(sop), 4),
+            "reason": (
+                f"Super Off-Peak has {abs(sop):.1f} kWh solar surplus. "
+                "Charging midnight\u20136 AM maximises self-consumption."
+            ),
+        }
+    elif op < 0:
+        return {
+            "recommended_period": "Off-Peak",
+            "charge_start": 21,
+            "charge_end": 24,
+            "surplus_kwh": round(abs(op), 4),
+            "reason": (
+                f"Off-Peak has {abs(op):.1f} kWh solar surplus. "
+                "Charging 9\u202fPM\u2013midnight uses that surplus cheaply."
+            ),
+        }
+    else:
+        return {
+            "recommended_period": "Super Off-Peak",
+            "charge_start": 0,
+            "charge_end": 6,
+            "surplus_kwh": 0.0,
+            "reason": (
+                "No solar surplus yet this period. "
+                "Super Off-Peak (midnight\u20136\u202fAM) is still the cheapest window."
+            ),
+        }
+
+
 if __name__ == '__main__':
 
     if len(sys.argv) != 2:
