@@ -20,8 +20,10 @@ _LOGIN_TIMEOUT_MS = 120_000  # 2 minutes
 def start_sdge_login() -> None:
     """Open a headed browser so the user can log in to SDGE.
 
-    Blocks until the browser lands on Usage/Index (successful login) or
-    120 seconds elapse.
+    Blocks until the browser lands on Dashboard/index (successful login) or
+    120 seconds elapse. SDGE redirects to Dashboard/index after login, not
+    Usage/Index — cookies are saved at that point and are valid for all
+    subsequent headless navigation.
 
     Raises:
         PlaywrightTimeoutError: login not completed within 120 s.
@@ -31,7 +33,7 @@ def start_sdge_login() -> None:
         context = browser.new_context()
         page = context.new_page()
         page.goto(BASE_URL)
-        page.wait_for_url(f"{BASE_URL}/Usage/Index", timeout=_LOGIN_TIMEOUT_MS)
+        page.wait_for_url(f"{BASE_URL}/Dashboard/**", timeout=_LOGIN_TIMEOUT_MS)
         SESSION_FILE.write_text(json.dumps(context.cookies()))
         browser.close()
 
