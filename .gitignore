@@ -131,3 +131,10 @@ dmypy.json
 # vscode & data
 .vscode/
 data/
+
+# SDGE / Tesla session cookies (contain auth tokens — never commit)
+.sdge_session.json
+.tesla_session.json
+
+# Fetch logs
+logs/
