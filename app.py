@@ -71,13 +71,18 @@ def index():
         )
     if session_exists():
         flash("Fetching data from SDGE\u2026", "info")
-        return redirect(url_for("fetch"))
+        return redirect(url_for("fetching"))
     return redirect(url_for("connect"))
 
 
 @app.route("/connect")
 def connect():
     return render_template("connect.html")
+
+
+@app.route("/fetching")
+def fetching():
+    return render_template("fetching.html")
 
 
 @app.route("/connect-sdge", methods=["POST"])
@@ -87,7 +92,7 @@ def connect_sdge():
     except Exception as e:
         flash(f"Login failed or timed out: {e}", "danger")
         return redirect(url_for("connect"))
-    return redirect(url_for("fetch"))
+    return redirect(url_for("fetching"))
 
 
 @app.route("/disconnect-sdge")
