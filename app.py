@@ -80,6 +80,11 @@ def connect():
     return render_template("connect.html")
 
 
+@app.route("/connecting")
+def connecting():
+    return render_template("connecting.html")
+
+
 @app.route("/fetching")
 def fetching():
     return render_template("fetching.html")
