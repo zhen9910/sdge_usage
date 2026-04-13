@@ -102,7 +102,9 @@ class TestFetchUsageCookiesParam(unittest.TestCase):
                 pass
 
         mock_load.assert_not_called()
-        mock_context.add_cookies.assert_called_once_with(fake_cookies)
+        # Cookies are normalized before being passed to Playwright
+        expected = [{'name': 'auth', 'value': 'xyz', 'domain': '.myenergycenter.com', 'expires': -1, 'sameSite': 'Lax'}]
+        mock_context.add_cookies.assert_called_once_with(expected)
 
     def test_fetch_falls_back_to_file_when_cookies_none(self):
         """When cookies=None, load_session_cookies() must be called."""
@@ -128,7 +130,9 @@ class TestFetchUsageCookiesParam(unittest.TestCase):
                 pass
 
         mock_load.assert_called_once()
-        mock_context.add_cookies.assert_called_once_with(file_cookies)
+        # Cookies are normalized before being passed to Playwright
+        expected = [{'name': 'auth', 'value': 'from_file', 'expires': -1, 'sameSite': 'Lax'}]
+        mock_context.add_cookies.assert_called_once_with(expected)
 
 
 class TestSaveCurrentBillingDataRouting(unittest.TestCase):

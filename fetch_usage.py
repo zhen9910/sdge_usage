@@ -31,6 +31,40 @@ CACHE_FILE = DATA_DIR / "current.json"
 BASE_URL = "https://myenergycenter.com/portal"
 
 
+def _normalize_cookies(cookies: list) -> list:
+    """Convert Chrome extension cookie objects to Playwright format.
+
+    Chrome cookies use expirationDate (float epoch) and lowercase sameSite
+    values ("no_restriction", "lax", "strict", "unspecified").
+    Playwright expects expires (int, -1 for session) and titlecase sameSite
+    ("None", "Lax", "Strict"), plus rejects unknown fields.
+    """
+    _sameSite_map = {
+        'no_restriction': 'None',
+        'none': 'None',
+        'lax': 'Lax',
+        'strict': 'Strict',
+        'unspecified': 'Lax',
+    }
+    # Only pass fields Playwright accepts; sameSite and expires always computed fresh.
+    _passthrough = {'name', 'value', 'domain', 'path', 'secure', 'httpOnly'}
+    out = []
+    for c in cookies:
+        pw = {k: v for k, v in c.items() if k in _passthrough}
+        # expires: prefer expirationDate (Chrome) then expires (Playwright), else -1
+        if 'expirationDate' in c:
+            pw['expires'] = int(c['expirationDate'])
+        elif 'expires' in c:
+            pw['expires'] = int(c['expires'])
+        else:
+            pw['expires'] = -1
+        # sameSite: always re-derive so unknown values fall back to 'Lax'
+        raw = str(c.get('sameSite') or '').lower()
+        pw['sameSite'] = _sameSite_map.get(raw, 'Lax')
+        out.append(pw)
+    return out
+
+
 def fetch_current_billing_csv(debug: bool = False, cookies: list | None = None) -> bytes:
     """Download the current billing period CSV from SDGE.
 
@@ -49,7 +83,8 @@ def fetch_current_billing_csv(debug: bool = False, cookies: list | None = None) 
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=not debug)
         context = browser.new_context()
-        context.add_cookies(cookies if cookies is not None else load_session_cookies())
+        raw_cookies = cookies if cookies is not None else load_session_cookies()
+        context.add_cookies(_normalize_cookies(raw_cookies))
         page = context.new_page()
 
         # ── 1. Load Usage/Index ──────────────────────────────────────────────

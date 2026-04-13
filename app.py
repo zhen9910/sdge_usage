@@ -128,9 +128,12 @@ def fetch():
     try:
         save_current_billing_data(uuid=uuid, cookies=cookies)
         flash("Usage data refreshed successfully.", "success")
+        return redirect(url_for('index'))
     except Exception as e:
+        # Render landing directly — redirecting to / would loop because
+        # / redirects back here when there's no cached data yet.
         flash(f"Fetch failed: {e}", "danger")
-    return redirect(url_for('index'))
+        return render_template('landing.html')
 
 
 @app.route('/schedule-tesla', methods=['POST'])
