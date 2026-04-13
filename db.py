@@ -26,7 +26,7 @@ def _db_path() -> str:
     return os.environ.get('DB_PATH', 'data/evsmart.db')
 
 
-def get_db() -> sqlite3.Connection:
+def _get_db() -> sqlite3.Connection:
     path = _db_path()
     Path(path).parent.mkdir(parents=True, exist_ok=True)
     conn = sqlite3.connect(path)
@@ -36,7 +36,7 @@ def get_db() -> sqlite3.Connection:
 
 def init_db() -> None:
     """Create tables if they don't exist. Safe to call on every startup."""
-    with get_db() as conn:
+    with _get_db() as conn:
         conn.execute('''
             CREATE TABLE IF NOT EXISTS sessions (
                 uuid                    TEXT PRIMARY KEY,
@@ -52,17 +52,20 @@ def init_db() -> None:
 def store_session(uuid: str, cookies: list) -> None:
     """Encrypt and store SDGE session cookies for the given anonymous UUID."""
     encrypted = _get_fernet().encrypt(json.dumps(cookies).encode())
-    with get_db() as conn:
+    with _get_db() as conn:
         conn.execute(
-            """INSERT OR REPLACE INTO sessions (uuid, sdge_cookies_encrypted, updated_at)
-               VALUES (?, ?, datetime('now'))""",
+            """INSERT INTO sessions (uuid, sdge_cookies_encrypted, updated_at)
+               VALUES (?, ?, datetime('now'))
+               ON CONFLICT(uuid) DO UPDATE SET
+                 sdge_cookies_encrypted = excluded.sdge_cookies_encrypted,
+                 updated_at = excluded.updated_at""",
             (uuid, encrypted),
         )
 
 
 def load_session_cookies(uuid: str) -> list | None:
     """Return decrypted SDGE cookies for uuid, or None if missing/expired."""
-    with get_db() as conn:
+    with _get_db() as conn:
         row = conn.execute(
             'SELECT sdge_cookies_encrypted FROM sessions WHERE uuid = ?', (uuid,)
         ).fetchone()
@@ -73,7 +76,7 @@ def load_session_cookies(uuid: str) -> list | None:
 
 def load_data(uuid: str) -> dict | None:
     """Return cached billing data dict for uuid, or None if not yet fetched."""
-    with get_db() as conn:
+    with _get_db() as conn:
         row = conn.execute(
             'SELECT data_json FROM sessions WHERE uuid = ?', (uuid,)
         ).fetchone()
@@ -84,24 +87,28 @@ def load_data(uuid: str) -> dict | None:
 
 def save_data(uuid: str, data: dict) -> None:
     """Update billing data and last_fetched_at for uuid."""
-    with get_db() as conn:
+    with _get_db() as conn:
         conn.execute(
             """UPDATE sessions
                SET data_json = ?, last_fetched_at = datetime('now'), updated_at = datetime('now')
                WHERE uuid = ?""",
             (json.dumps(data), uuid),
         )
+        changed = conn.execute('SELECT changes()').fetchone()[0]
+    if changed == 0:
+        import logging
+        logging.getLogger(__name__).warning('save_data: no row found for uuid %s', uuid[:8])
 
 
 def clear_session(uuid: str) -> None:
     """Delete all data for uuid (user disconnect)."""
-    with get_db() as conn:
+    with _get_db() as conn:
         conn.execute('DELETE FROM sessions WHERE uuid = ?', (uuid,))
 
 
 def mark_session_expired(uuid: str) -> None:
     """Null out cookies so the extension shows a red badge; preserve data_json."""
-    with get_db() as conn:
+    with _get_db() as conn:
         conn.execute(
             "UPDATE sessions SET sdge_cookies_encrypted = NULL, updated_at = datetime('now') WHERE uuid = ?",
             (uuid,),
@@ -110,7 +117,7 @@ def mark_session_expired(uuid: str) -> None:
 
 def list_active_uuids() -> list[str]:
     """Return UUIDs with non-null cookies (eligible for cron fetch)."""
-    with get_db() as conn:
+    with _get_db() as conn:
         rows = conn.execute(
             'SELECT uuid FROM sessions WHERE sdge_cookies_encrypted IS NOT NULL'
         ).fetchall()

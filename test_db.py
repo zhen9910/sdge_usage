@@ -20,6 +20,13 @@ class TestDb(unittest.TestCase):
         db.init_db()
         self.db = db
 
+    def tearDown(self):
+        self._tmp.close()
+        try:
+            os.unlink(self._tmp.name)
+        except OSError:
+            pass
+
     def test_store_and_load_session(self):
         cookies = [{'name': 'auth', 'value': 'abc', 'domain': '.sdge.com'}]
         self.db.store_session('uuid-1', cookies)
