@@ -1,5 +1,6 @@
 import datetime
 import json
+import os
 from pathlib import Path
 from uuid import uuid4
 
@@ -12,7 +13,7 @@ import db
 from sdge_usage import get_charging_recommendation, iter_rows_csv_stream, iter_rows_xlsx_stream, process
 
 app = Flask(__name__)
-app.secret_key = "sdge-usage-secret"
+app.secret_key = os.environ.get('SECRET_KEY', 'sdge-usage-secret-dev-only')
 
 ALLOWED_EXTENSIONS = {"csv", "xlsx"}
 
@@ -63,6 +64,7 @@ def set_uuid_cookie_if_new(response):
             max_age=365 * 24 * 3600,
             httponly=True,
             samesite='Lax',
+            secure=not app.debug,
         )
     return response
 
