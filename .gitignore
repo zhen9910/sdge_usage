@@ -131,6 +131,7 @@ dmypy.json
 # vscode & data
 .vscode/
 data/
+data/evsmart.db
 
 # SDGE / Tesla session cookies (contain auth tokens — never commit)
 .sdge_session.json
