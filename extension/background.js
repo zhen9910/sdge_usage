@@ -2,7 +2,7 @@
 // Watches for SDGE login, captures cookies, uploads to EVSmart backend.
 
 // Change to 'https://evsmart.com' before publishing to Web Store.
-const API_BASE = 'http://localhost:5000';
+const API_BASE = 'http://127.0.0.1:5000';
 
 // ── On install: generate a UUID for this browser ──────────────────────────────
 chrome.runtime.onInstalled.addListener(async () => {
