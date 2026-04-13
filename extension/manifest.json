@@ -1,7 +1,8 @@
 {
   "manifest_version": 3,
   "name": "EVSmart SDGE Connector",
-  "version": "0.1.0-dev",
+  "version": "0.1.0",
+  "dev_mode": true,
   "description": "Connects your SDGE account to EVSmart for automatic EV charging recommendations",
   "permissions": ["cookies", "storage"],
   "host_permissions": [

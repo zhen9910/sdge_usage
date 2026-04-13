@@ -1,4 +1,4 @@
-const API_BASE = chrome.runtime.getManifest().version.includes('dev')
+const API_BASE = chrome.runtime.getManifest().dev_mode
   ? 'http://localhost:5000'
   : 'https://evsmart.com';
 
