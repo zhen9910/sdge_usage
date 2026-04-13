@@ -201,5 +201,65 @@ class TestSaveCurrentBillingDataRouting(unittest.TestCase):
         mock_write.assert_called_once()
 
 
+class TestFetchAll(unittest.TestCase):
+    def setUp(self):
+        key = Fernet.generate_key().decode()
+        os.environ['FERNET_KEY'] = key
+        self._tmp = tempfile.NamedTemporaryFile(suffix='.db', delete=False)
+        os.environ['DB_PATH'] = self._tmp.name
+        import db
+        importlib.reload(db)
+        db._fernet = None
+        db.init_db()
+        self.db = db
+
+    def tearDown(self):
+        self._tmp.close()
+        try:
+            os.unlink(self._tmp.name)
+        except OSError:
+            pass
+
+    def test_fetch_all_calls_save_for_each_active_uuid(self):
+        import unittest.mock as mock
+        self.db.store_session('uuid-a', [{'name': 'cookie_a'}])
+        self.db.store_session('uuid-b', [{'name': 'cookie_b'}])
+
+        import fetch_all
+        with mock.patch('fetch_all.save_current_billing_data') as mock_save, \
+             mock.patch('fetch_all.db', self.db):
+            fetch_all.fetch_all_sessions()
+
+        self.assertEqual(mock_save.call_count, 2)
+        called_uuids = {call[1]['uuid'] for call in mock_save.call_args_list}
+        self.assertIn('uuid-a', called_uuids)
+        self.assertIn('uuid-b', called_uuids)
+
+    def test_fetch_all_marks_expired_on_session_error(self):
+        import unittest.mock as mock
+        self.db.store_session('uuid-bad', [{'name': 'stale'}])
+
+        import fetch_all
+        with mock.patch('fetch_all.save_current_billing_data', side_effect=Exception('401 Unauthorized')), \
+             mock.patch('fetch_all.db', self.db):
+            fetch_all.fetch_all_sessions()
+
+        self.assertIsNone(self.db.load_session_cookies('uuid-bad'))
+
+    def test_fetch_all_skips_expired_sessions(self):
+        import unittest.mock as mock
+        self.db.store_session('uuid-active', [{'name': 'good'}])
+        self.db.store_session('uuid-expired', [{'name': 'gone'}])
+        self.db.mark_session_expired('uuid-expired')
+
+        import fetch_all
+        with mock.patch('fetch_all.save_current_billing_data') as mock_save, \
+             mock.patch('fetch_all.db', self.db):
+            fetch_all.fetch_all_sessions()
+
+        self.assertEqual(mock_save.call_count, 1)
+        self.assertEqual(mock_save.call_args[1]['uuid'], 'uuid-active')
+
+
 if __name__ == '__main__':
     unittest.main()
