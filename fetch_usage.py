@@ -24,18 +24,20 @@ from playwright.sync_api import sync_playwright
 
 from sdge_auth import load_session_cookies
 from sdge_usage import iter_rows_csv_stream, process
+import db
 
 DATA_DIR = Path(__file__).parent / "data"
 CACHE_FILE = DATA_DIR / "current.json"
 BASE_URL = "https://myenergycenter.com/portal"
 
 
-def fetch_current_billing_csv(debug: bool = False) -> bytes:
+def fetch_current_billing_csv(debug: bool = False, cookies: list | None = None) -> bytes:
     """Download the current billing period CSV from SDGE.
 
     Args:
         debug: Launch a headed browser and pause at key steps so selectors
                can be inspected in the Playwright Inspector.
+        cookies: SDGE session cookies list. If None, loads from .sdge_session.json.
 
     Returns:
         Raw CSV bytes.
@@ -47,7 +49,7 @@ def fetch_current_billing_csv(debug: bool = False) -> bytes:
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=not debug)
         context = browser.new_context()
-        context.add_cookies(load_session_cookies())
+        context.add_cookies(cookies if cookies is not None else load_session_cookies())
         page = context.new_page()
 
         # ── 1. Load Usage/Index ──────────────────────────────────────────────
@@ -155,18 +157,26 @@ def fetch_current_billing_csv(debug: bool = False) -> bytes:
         return csv_bytes
 
 
-def save_current_billing_data() -> dict:
+def save_current_billing_data(uuid: str | None = None, cookies: list | None = None) -> dict:
     """Download, parse, and cache the current billing period data.
+
+    Args:
+        uuid: Anonymous session UUID. If given, saves result to SQLite via db.save_data().
+              If None, saves to data/current.json (local CLI backward-compat).
+        cookies: SDGE session cookies list. If None, loads from .sdge_session.json.
 
     Returns:
         The result dict (same shape as sdge_usage.process() plus 'fetched_at').
     """
-    csv_bytes = fetch_current_billing_csv()
+    csv_bytes = fetch_current_billing_csv(cookies=cookies)
     rows = iter_rows_csv_stream(io.BytesIO(csv_bytes))
     result = process(rows)
     result["fetched_at"] = datetime.datetime.now().isoformat(timespec="seconds")
-    DATA_DIR.mkdir(exist_ok=True)
-    CACHE_FILE.write_text(json.dumps(result, default=str))
+    if uuid is not None:
+        db.save_data(uuid, result)
+    else:
+        DATA_DIR.mkdir(exist_ok=True)
+        CACHE_FILE.write_text(json.dumps(result, default=str))
     return result
 
 
