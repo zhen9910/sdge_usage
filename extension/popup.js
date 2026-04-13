@@ -1,6 +1,5 @@
-const API_BASE = chrome.runtime.getManifest().dev_mode
-  ? 'http://localhost:5000'
-  : 'https://evsmart.com';
+// Change to 'https://evsmart.com' before publishing to Web Store.
+const API_BASE = 'http://localhost:5000';
 
 async function render() {
   const { status, lastSync } = await chrome.storage.local.get(['status', 'lastSync']);
