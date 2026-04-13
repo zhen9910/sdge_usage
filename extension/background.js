@@ -50,10 +50,16 @@ async function uploadSession() {
 
     if (response.ok) {
       const syncTime = new Date().toISOString();
+      const { status: prevStatus } = await chrome.storage.local.get(['status']);
       await chrome.storage.local.set({ status: 'connected', lastSync: syncTime });
       chrome.action.setBadgeText({ text: '✓' });
       chrome.action.setBadgeBackgroundColor({ color: '#22c55e' });
       console.log('[EVSmart] Session uploaded at', syncTime);
+
+      // Auto-open dashboard on first connect or reconnect after expiry.
+      if (prevStatus !== 'connected') {
+        chrome.tabs.create({ url: `${API_BASE}/?uuid=${uuid}` });
+      }
     } else {
       await chrome.storage.local.set({ status: 'error', lastSync: null });
       chrome.action.setBadgeText({ text: '!' });
