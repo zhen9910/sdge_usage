@@ -49,14 +49,18 @@ def _tesla_session_exists() -> bool:
 
 @app.before_request
 def ensure_uuid_cookie():
-    # Accept uuid from cookie, or from ?uuid= query param (set by extension popup link).
-    g.uuid = request.cookies.get('uuid') or request.args.get('uuid', '').strip() or None
-    g.new_uuid = None
-    if not g.uuid:
+    param_uuid = request.args.get('uuid', '').strip() or None
+    cookie_uuid = request.cookies.get('uuid')
+
+    if param_uuid:
+        # ?uuid= from extension popup always wins — update cookie to match.
+        g.uuid = param_uuid
+        g.new_uuid = param_uuid
+    elif cookie_uuid:
+        g.uuid = cookie_uuid
+        g.new_uuid = None
+    else:
         g.uuid = str(uuid4())
-        g.new_uuid = g.uuid
-    elif not request.cookies.get('uuid'):
-        # UUID came from query param — promote it to a persistent cookie.
         g.new_uuid = g.uuid
 
 
