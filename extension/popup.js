@@ -3,17 +3,13 @@ const API_BASE = 'http://127.0.0.1:5000';
 
 const SDGE_LOGIN_URL = 'https://myenergycenter.com/portal';
 
-async function render() {
-  const { status, lastSync } = await chrome.storage.local.get(['status', 'lastSync']);
-
+function applyStatus(status, lastSync, uuid) {
   const dot        = document.getElementById('dot');
   const label      = document.getElementById('label');
   const hint       = document.getElementById('hint');
   const link       = document.getElementById('link');
   const connectBtn = document.getElementById('connect-btn');
 
-  // Include uuid as a query param so Flask can set the cookie on first visit.
-  const { uuid } = await chrome.storage.local.get(['uuid']);
   link.href = uuid ? `${API_BASE}/?uuid=${uuid}` : API_BASE;
 
   if (status === 'connected') {
@@ -38,9 +34,33 @@ async function render() {
     connectBtn.style.display = 'block';
   }
 
-  connectBtn.addEventListener('click', () => {
+  document.getElementById('connect-btn').addEventListener('click', () => {
     chrome.tabs.create({ url: SDGE_LOGIN_URL });
   });
+}
+
+async function render() {
+  const stored = await chrome.storage.local.get(['status', 'lastSync', 'uuid']);
+  const uuid = stored.uuid;
+
+  // Show cached status immediately, then verify live.
+  applyStatus(stored.status, stored.lastSync, uuid);
+
+  // Poll the backend to catch disconnect or expiry that happened since last sync.
+  if (uuid) {
+    try {
+      const resp = await fetch(`${API_BASE}/api/session/status?uuid=${uuid}`);
+      const data = await resp.json();
+      if (!data.connected && stored.status === 'connected') {
+        await chrome.storage.local.set({ status: 'expired', lastSync: null });
+        chrome.action.setBadgeText({ text: '!' });
+        chrome.action.setBadgeBackgroundColor({ color: '#ef4444' });
+        applyStatus('expired', null, uuid);
+      }
+    } catch (_) {
+      // Server unreachable — keep cached status.
+    }
+  }
 }
 
 render();

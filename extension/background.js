@@ -51,19 +51,6 @@ async function uploadSession() {
     if (response.ok) {
       const syncTime = new Date().toISOString();
       await chrome.storage.local.set({ status: 'connected', lastSync: syncTime });
-
-      // Plant the extension's UUID as a browser cookie on the dashboard domain
-      // so Flask reads the same UUID when the user visits the site.
-      await chrome.cookies.set({
-        url: API_BASE,
-        name: 'uuid',
-        value: uuid,
-        path: '/',
-        httpOnly: true,
-        sameSite: 'lax',
-        expirationDate: Math.floor(Date.now() / 1000) + 365 * 24 * 3600,
-      });
-
       chrome.action.setBadgeText({ text: '✓' });
       chrome.action.setBadgeBackgroundColor({ color: '#22c55e' });
       console.log('[EVSmart] Session uploaded at', syncTime);
