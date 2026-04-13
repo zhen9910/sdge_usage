@@ -56,7 +56,7 @@ async function uploadSession() {
       chrome.action.setBadgeBackgroundColor({ color: '#22c55e' });
       console.log('[EVSmart] Session uploaded at', syncTime);
     } else {
-      await chrome.storage.local.set({ status: 'error' });
+      await chrome.storage.local.set({ status: 'error', lastSync: null });
       chrome.action.setBadgeText({ text: '!' });
       chrome.action.setBadgeBackgroundColor({ color: '#ef4444' });
       console.warn('[EVSmart] Upload returned', response.status);

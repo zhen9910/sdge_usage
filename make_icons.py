@@ -11,7 +11,7 @@ def make_png(size):
         c = struct.pack('>I', len(data)) + name + data
         return c + struct.pack('>I', zlib.crc32(c[4:]) & 0xffffffff)
 
-    raw = b'\x00' + bytes([0x22, 0xc5, 0x5e] * size) * size  # green #22c55e
+    raw = (b'\x00' + bytes([0x22, 0xc5, 0x5e] * size)) * size  # green #22c55e; one filter byte per row
     compressed = zlib.compress(raw)
     ihdr = struct.pack('>IIBBBBB', size, size, 8, 2, 0, 0, 0)
     return (
