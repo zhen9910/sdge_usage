@@ -12,7 +12,9 @@ async function render() {
   const link       = document.getElementById('link');
   const connectBtn = document.getElementById('connect-btn');
 
-  link.href = API_BASE;
+  // Include uuid as a query param so Flask can set the cookie on first visit.
+  const { uuid } = await chrome.storage.local.get(['uuid']);
+  link.href = uuid ? `${API_BASE}/?uuid=${uuid}` : API_BASE;
 
   if (status === 'connected') {
     dot.className     = 'dot connected';
