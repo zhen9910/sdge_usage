@@ -3,7 +3,7 @@
   "name": "EVSmart SDGE Connector",
   "version": "0.1.0",
   "description": "Connects your SDGE account to EVSmart for automatic EV charging recommendations",
-  "permissions": ["cookies", "storage"],
+  "permissions": ["cookies", "storage", "tabs"],
   "host_permissions": [
     "*://*.sdge.com/*",
     "*://*.myenergycenter.com/*",
