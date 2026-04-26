@@ -10,8 +10,7 @@ us_holidays = holidays.US()
 def get_time_periods(date, time):
 
     hour = time.hour
-    weekday = date.weekday() < 5
-    weekend = not weekday
+    weekend = date.weekday() >= 5
     holiday = date in us_holidays
 
     match hour:
