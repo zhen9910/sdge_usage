@@ -10,10 +10,8 @@ us_holidays = holidays.US()
 def get_time_periods(date, time):
 
     hour = time.hour
-    weekday = date.weekday() < 5
-    weekend = not weekday
+    weekend = date.weekday() >= 5
     holiday = date in us_holidays
-    march_or_april = date.month == 3 or date.month == 4
 
     match hour:
         case hour if hour >= 0 and hour < 6:
@@ -21,7 +19,7 @@ def get_time_periods(date, time):
         case hour if hour >= 6 and hour < 10:
             time_period = "Super Off Peak" if (weekend or holiday) else "Off Peak"
         case hour if hour >= 10 and hour < 14:
-            time_period = "Super Off Peak" if (weekend or holiday or march_or_april) else "Off Peak"
+            time_period = "Super Off Peak"
         case hour if hour >= 16 and hour < 21:
             time_period = "On Peak"
         case _:

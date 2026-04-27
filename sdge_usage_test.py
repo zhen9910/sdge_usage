@@ -40,5 +40,19 @@ class UnitTest(unittest.TestCase):
         time_obj = datetime.datetime.strptime(time_string, '%I:%M %p').time()
         self.assertEqual(get_time_periods(datetime_object, time_obj), "Super Off Peak")
 
+    def test_6(self):   # weekday July (not March/April), midday 10am-2pm should be Super Off Peak year-round
+        date_string = "07/05/2023"
+        time_string = "11:00 AM"
+        datetime_object = datetime.datetime.strptime(date_string, date_format)
+        time_obj = datetime.datetime.strptime(time_string, '%I:%M %p').time()
+        self.assertEqual(get_time_periods(datetime_object, time_obj), "Super Off Peak")
+
+    def test_7(self):   # weekday November (not March/April), midday 10am-2pm should be Super Off Peak year-round
+        date_string = "11/15/2023"
+        time_string = "01:30 PM"
+        datetime_object = datetime.datetime.strptime(date_string, date_format)
+        time_obj = datetime.datetime.strptime(time_string, '%I:%M %p').time()
+        self.assertEqual(get_time_periods(datetime_object, time_obj), "Super Off Peak")
+
 if __name__ == '__main__':
     unittest.main()
