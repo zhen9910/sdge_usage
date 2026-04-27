@@ -1,6 +1,6 @@
 # SDGE Usage — EV Charging Dashboard
 
-A local web dashboard for solar + EV owners on SDGE's **TOU-DR1** rate plan.
+A local web dashboard for solar + EV owners on SDGE's **EV-TOU-5** rate plan.
 Automatically fetches the current billing period's electricity usage, identifies
 which rate period has solar surplus, and recommends — or directly schedules —
 when to charge your EV.
@@ -13,7 +13,7 @@ when to charge your EV.
 
 - **One-click SDGE connect** — opens a browser for manual login (handles reCAPTCHA); session is saved locally, no password stored
 - **Automatic data fetch** — downloads the current billing period CSV from SDGE headlessly using the saved session; runs daily via cron
-- **Charging recommendation** — identifies which TOU-DR1 period (Super Off-Peak or Off-Peak) has solar surplus and recommends the optimal EV charging window
+- **Charging recommendation** — identifies which EV-TOU-5 period (Super Off-Peak or Off-Peak) has solar surplus and recommends the optimal EV charging window
 - **Tesla one-click scheduling** — pushes the recommended charge window directly to your Tesla via the Owner API
 - **Staleness warning** — alerts when cached data is older than 48 hours
 
@@ -22,7 +22,7 @@ when to charge your EV.
 ## Requirements
 
 - Python 3.10+
-- SDGE account (TOU-DR1 rate plan)
+- SDGE account (EV-TOU-5 rate plan)
 - Tesla account (optional, for one-click scheduling)
 
 Install dependencies:
@@ -67,6 +67,9 @@ python sdge_usage.py ./Electric_15_Minute_*.csv
 
 ## Release Notes
 
+### v0.6.0 (2026-04-26)
+- **Rate plan correction** — updated all references from TOU-DR1 to EV-TOU-5; midday 10 AM–2 PM window is Super Off-Peak year-round on weekdays (not seasonal)
+
 ### v0.5.0 (2026-04-12)
 - **EV Charging Dashboard** — full web UI replacing the single upload-and-display flow
 - **In-app SDGE connect** — one-click browser login flow; no terminal commands needed
@@ -78,5 +81,5 @@ python sdge_usage.py ./Electric_15_Minute_*.csv
 
 ### v0.1.0 (2023-04-07)
 - Initial CLI tool — parse SDGE 15-minute interval XLSX/CSV exports
-- Categorise usage into TOU-DR1 periods: Super Off-Peak, Off-Peak, On-Peak
+- Categorise usage into EV-TOU-5 periods: Super Off-Peak, Off-Peak, On-Peak
 - Print net kWh per period to stdout
